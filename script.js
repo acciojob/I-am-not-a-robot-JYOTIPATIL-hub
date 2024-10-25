@@ -1,82 +1,77 @@
 //your code here
-import React, { useState, useEffect } from 'react';
-import './style.css'; // Make sure to include your CSS here
+const imageContainer = document.getElementById("imageContainer");
+const resetButton = document.getElementById("reset");
+const verifyButton = document.getElementById("verify");
+const messageParagraph = document.getElementById("para");
 
-const App = () => {
-  const imagesArray = ['img1', 'img2', 'img3', 'img4', 'img5'];
-  const [shuffledImages, setShuffledImages] = useState([]);
-  const [selectedImages, setSelectedImages] = useState([]);
-  const [resetVisible, setResetVisible] = useState(false);
-  const [verifyVisible, setVerifyVisible] = useState(false);
-  const [message, setMessage] = useState('');
+let images = [];  // Array to hold image elements
+let selectedImages = [];  // Array to track selected images
 
-  // Function to shuffle and randomly duplicate an image
-  const shuffleImages = () => {
-    const randomImage = imagesArray[Math.floor(Math.random() * imagesArray.length)];
-    let imagesWithDuplicate = [...imagesArray, randomImage];
-    imagesWithDuplicate = imagesWithDuplicate.sort(() => Math.random() - 0.5);
-    setShuffledImages(imagesWithDuplicate);
-    setMessage('Please click on the identical tiles to verify that you are not a robot.');
-    setSelectedImages([]);
-    setResetVisible(false);
-    setVerifyVisible(false);
-  };
+// Array with 5 unique images (URLs can be API calls if needed)
+const imageSources = ["img1.png", "img2.png", "img3.png", "img4.png", "img5.png"];
 
-  // On component mount, shuffle images
-  useEffect(() => {
-    shuffleImages();
-  }, []);
+function initGame() {
+    // Reset message and buttons
+    messageParagraph.textContent = "";
+    resetButton.style.display = "none";
+    verifyButton.style.display = "none";
+    selectedImages = [];
 
-  // Handle image click event
-  const handleImageClick = (imgClass, index) => {
-    if (selectedImages.length === 2 || selectedImages.includes(index)) {
-      return; // Prevent clicking more than 2 or double-clicking the same image
-    }
+    // Choose a random image to duplicate
+    const duplicateIndex = Math.floor(Math.random() * imageSources.length);
+    const duplicateImage = imageSources[duplicateIndex];
 
-    const newSelectedImages = [...selectedImages, index];
-    setSelectedImages(newSelectedImages);
-    setResetVisible(true);
+    // Create an array with images including the duplicate
+    const imagesToRender = [...imageSources, duplicateImage];
 
-    if (newSelectedImages.length === 2) {
-      setVerifyVisible(true);
-    }
-  };
+    // Shuffle the images array
+    imagesToRender.sort(() => Math.random() - 0.5);
 
-  // Handle verify button click
-  const handleVerify = () => {
-    setVerifyVisible(false);
-    const [firstIndex, secondIndex] = selectedImages;
-    if (shuffledImages[firstIndex] === shuffledImages[secondIndex]) {
-      setMessage('You are a human. Congratulations!');
+    // Render images in the container
+    imageContainer.innerHTML = "";
+    imagesToRender.forEach((src, index) => {
+        const img = document.createElement("img");
+        img.src = src; 
+        img.className = `img${duplicateIndex + 1}`; // Class names per requirement
+        img.onclick = () => handleImageClick(img, src);
+        imageContainer.appendChild(img);
+    });
+}
+
+// Handle image click
+function handleImageClick(img, src) {
+    // Check if image was already selected (to avoid double-clicking the same image)
+    if (selectedImages.includes(src)) return;
+
+    // Add the selected image to the array and show Reset button
+    selectedImages.push(src);
+    resetButton.style.display = "block";
+
+    // Check if two images have been clicked
+    if (selectedImages.length === 2) {
+        verifyButton.style.display = "block";
     } else {
-      setMessage('We can\'t verify you as a human. You selected the non-identical tiles.');
+        verifyButton.style.display = "none";
     }
-  };
+}
 
-  // Handle reset button click
-  const handleReset = () => {
-    shuffleImages();
-  };
+// Verify user selection
+function verifySelection() {
+    verifyButton.style.display = "none";
 
-  return (
-    <div>
-      <h3 id="h">Please click on the identical tiles to verify that you are not a robot.</h3>
-      <div className="image-container">
-        {shuffledImages.map((imgClass, index) => (
-          <img
-            key={index}
-            className={imgClass}
-            alt="tile"
-            onClick={() => handleImageClick(imgClass, index)}
-          />
-        ))}
-      </div>
+    if (selectedImages.length === 2) {
+        if (selectedImages[0] === selectedImages[1]) {
+            messageParagraph.textContent = "You are a human. Congratulations!";
+        } else {
+            messageParagraph.textContent = "We can't verify you as a human. You selected the non-identical tiles.";
+        }
+    }
+}
 
-      {resetVisible && <button id="reset" onClick={handleReset}>Reset</button>}
-      {verifyVisible && <button id="verify" onClick={handleVerify}>Verify</button>}
-      <p id="para">{message}</p>
-    </div>
-  );
-};
+// Reset the game
+function resetGame() {
+    initGame();  // Reinitialize game state
+}
 
-export default App;
+// Initialize game on page load
+initGame();
